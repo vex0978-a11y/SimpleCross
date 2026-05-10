@@ -1,5 +1,5 @@
 # SimpleCross
-Simple crosshair overlay program made with Codex AI. 
+A simple crosshair overlay program made with Codex AI. 
 
 Features:
 - 5 default crosshair types, each with 9 colors.

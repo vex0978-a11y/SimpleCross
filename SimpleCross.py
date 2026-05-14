@@ -474,20 +474,9 @@ class SimpleCrossApp:
             command=self._on_opacity_changed,
             commit=self._commit_opacity_entry,
         )
-        self.outline_opacity_scale = self._add_scale_row(
-            frame,
-            row=3,
-            label="Outline opacity",
-            variable=self.outline_opacity_var,
-            minimum=MIN_OPACITY * 100,
-            maximum=MAX_OPACITY * 100,
-            value=self.settings.outline_opacity * 100,
-            command=self._on_outline_opacity_changed,
-            commit=self._commit_outline_opacity_entry,
-        )
         self.outline_thickness_scale = self._add_scale_row(
             frame,
-            row=4,
+            row=3,
             label="Outline width",
             variable=self.outline_thickness_var,
             minimum=MIN_OUTLINE_THICKNESS,
@@ -502,10 +491,10 @@ class SimpleCrossApp:
             text="Hide",
             variable=self.hidden_var,
             command=self._on_hidden_changed,
-        ).grid(row=5, column=1, columnspan=3, sticky="w", pady=(8, 0))
+        ).grid(row=4, column=1, columnspan=3, sticky="w", pady=(8, 0))
 
         ttk.Button(frame, text="Refresh list", command=self._refresh_crosshair_list).grid(
-            row=6, column=1, columnspan=3, sticky="w", pady=(8, 0)
+            row=5, column=1, columnspan=3, sticky="w", pady=(8, 0)
         )
 
         if not self.crosshairs:
@@ -513,7 +502,7 @@ class SimpleCrossApp:
                 frame,
                 text="Put PNG files into the crosshairs folder.",
                 foreground="red",
-            ).grid(row=7, column=0, columnspan=4, sticky="w", pady=(12, 0))
+            ).grid(row=6, column=0, columnspan=4, sticky="w", pady=(12, 0))
 
     def _build_color_tab(self, frame: ttk.Frame) -> None:
         self.color_preview = Frame(
@@ -700,16 +689,6 @@ class SimpleCrossApp:
         self._apply_crosshair_window_styles()
         self._schedule_save()
 
-    def _on_outline_opacity_changed(self, value: str) -> None:
-        if self._updating_controls:
-            return
-        percent = Settings._clamp_float(value, MIN_OPACITY * 100, MAX_OPACITY * 100, 0)
-        percent = int(percent + 0.5)
-        self.settings.outline_opacity = round(percent / 100, 2)
-        self.outline_opacity_var.set(str(percent))
-        self._schedule_save()
-        self._refresh_crosshair()
-
     def _on_outline_thickness_changed(self, value: str) -> None:
         if self._updating_controls:
             return
@@ -791,23 +770,6 @@ class SimpleCrossApp:
         self._updating_controls = False
         self._apply_crosshair_window_styles()
         self.settings.save_if_changed()
-        return "break"
-
-    def _commit_outline_opacity_entry(self, _event=None):
-        percent = Settings._clamp_float(
-            self.outline_opacity_var.get(),
-            MIN_OPACITY * 100,
-            MAX_OPACITY * 100,
-            self.settings.outline_opacity * 100,
-        )
-        percent = int(percent + 0.5)
-        self.settings.outline_opacity = round(percent / 100, 2)
-        self.outline_opacity_var.set(str(percent))
-        self._updating_controls = True
-        self.outline_opacity_scale.set(percent)
-        self._updating_controls = False
-        self.settings.save_if_changed()
-        self._refresh_crosshair()
         return "break"
 
     def _commit_outline_thickness_entry(self, _event=None):
@@ -1064,9 +1026,8 @@ class SimpleCrossApp:
 
         dilated = alpha_padded.filter(ImageFilter.MaxFilter(thickness * 2 + 1))
         outline_mask = ImageChops.subtract(dilated, alpha_padded)
-        outline_alpha = max(0, min(255, int(self.settings.outline_opacity * 255)))
         outline_mask = outline_mask.point(
-            lambda value: outline_alpha if value > ALPHA_KEY_THRESHOLD else 0
+            lambda value: 255 if value > ALPHA_KEY_THRESHOLD else 0
         )
 
         outline = Image.new("RGBA", size, (*self._outline_rgb_tuple(), 255))
@@ -1142,7 +1103,7 @@ class SimpleCrossApp:
         )
 
     def _outline_enabled(self) -> bool:
-        return self.settings.outline_thickness > 0 and self.settings.outline_opacity > 0
+        return self.settings.outline_thickness > 0
 
     def _transparent_rgb(self) -> tuple[int, int, int]:
         visible_colors = {self._rgb_tuple()}

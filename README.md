@@ -1,14 +1,19 @@
 # SimpleCross
 A simple crosshair overlay program made with Codex AI. 
 
-Features:
-- 5 default crosshair types, each with 9 colors.
-- Compatible with any custom PNG crosshairs.
-- Adjustable X/Y crosshair offset.
-- Adjustable crosshair size.
-- Adjustable crosshair opacity.
+<img width="400" height="225" alt="Video Project 13" src="https://github.com/user-attachments/assets/6f877b26-24c4-4ccc-8e72-dd3a194271f3" />
 
-How to use:
+# Features:
+- 5 default crosshair types
+- Compatible with any custom transparent PNG crosshairs (but it will fill it with plain color)
+- Adjustable X/Y crosshair offset
+- Adjustable rotation
+- Adjustable crosshair size
+- Adjustable crosshair opacity
+- Adjustable outline color and width
+- Aim and hide hotkeys
+
+# How to use:
 1. Download release
 2. Add custom crosshairs as transparent PNG in "crosshairs" folder (optional)
 3. Run SimpleCross.exe
@@ -17,7 +22,3 @@ How to use:
 Notes:
 - Some anticheats/games may block overlay
 - Working with games in borderless/windowed mode
-
-Screenshots
-<img width="602" height="368" alt="image" src="https://github.com/user-attachments/assets/e1a95dfa-4fce-4b07-85e2-957398c6e86a" />
-<img width="1918" height="1024" alt="Снимок экрана 2026-05-10 141022" src="https://github.com/user-attachments/assets/248f8d6e-ee84-413f-b7ae-6cfd0ce72d69" />

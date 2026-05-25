@@ -12,6 +12,7 @@ A simple crosshair overlay program made with Codex AI.
 - Adjustable crosshair opacity
 - Adjustable outline color and width
 - Aim and hide hotkeys
+- 9 localiztaions  (en, ru, es, de, fr, pt-BR, ja, ko, zh-CN)
 
 # How to use:
 1. Download release

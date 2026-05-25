@@ -2,7 +2,17 @@ import configparser
 import ctypes
 import sys
 from pathlib import Path
-from tkinter import BooleanVar, Frame, HORIZONTAL, Label, StringVar, Tk, Toplevel, ttk
+from tkinter import (
+    BooleanVar,
+    Frame,
+    HORIZONTAL,
+    Label,
+    StringVar,
+    TclError,
+    Tk,
+    Toplevel,
+    ttk,
+)
 
 try:
     from PIL import Image, ImageChops, ImageFilter, ImageTk
@@ -31,6 +41,7 @@ DEFAULT_ROTATION = 0
 DEFAULT_RED = 255
 DEFAULT_GREEN = 255
 DEFAULT_BLUE = 255
+DEFAULT_FILL_PLAIN_COLOR = True
 DEFAULT_OUTLINE_RED = 0
 DEFAULT_OUTLINE_GREEN = 0
 DEFAULT_OUTLINE_BLUE = 0
@@ -38,6 +49,7 @@ DEFAULT_OUTLINE_OPACITY = 0.0
 DEFAULT_OUTLINE_THICKNESS = 0
 DEFAULT_AIM_HOTKEY = "MouseRight"
 DEFAULT_HIDE_HOTKEY = "Ctrl+H"
+DEFAULT_LANGUAGE = "en"
 MIN_SIZE = 1
 MAX_SIZE = 256
 MIN_OPACITY = 0.0
@@ -54,6 +66,262 @@ SHAPE_PREVIEW_SIZE = 56
 COLOR_PREVIEW_SIZE = 36
 ALPHA_KEY_THRESHOLD = 8
 HOTKEY_POLL_MS = 25
+LANGUAGES = {
+    "en": "English",
+    "ru": "Русский",
+    "es": "Español",
+    "de": "Deutsch",
+    "fr": "Français",
+    "pt-BR": "Português (Brasil)",
+    "ja": "日本語",
+    "ko": "한국어",
+    "zh-CN": "简体中文",
+}
+TEXT = {
+    "en": {
+        "window_title": "SimpleCross Settings",
+        "tab_shape": "Shape",
+        "tab_color": "Color",
+        "tab_offset": "Offset",
+        "tab_hotkeys": "Hotkeys",
+        "tab_language_about": "Language/About",
+        "png": "PNG",
+        "size": "Size",
+        "opacity": "Opacity",
+        "outline_width": "Outline width",
+        "hide": "Hide",
+        "refresh_list": "Refresh list",
+        "missing_crosshairs": "Put PNG files into the crosshairs folder.",
+        "crosshair": "Crosshair",
+        "fill_plain_color": "Fill with plain color",
+        "red": "Red",
+        "green": "Green",
+        "blue": "Blue",
+        "outline": "Outline",
+        "rotation": "Rotation",
+        "aim": "Aim",
+        "language": "Language",
+        "about": "About",
+        "made_by": "Made by MaZe (a11y) (OpenAI Codex assisted)",
+        "version": "Version: 1.1",
+    },
+    "ru": {
+        "window_title": "Настройки SimpleCross",
+        "tab_shape": "Форма",
+        "tab_color": "Цвет",
+        "tab_offset": "Смещение",
+        "tab_hotkeys": "Клавиши",
+        "tab_language_about": "Язык/О программе",
+        "png": "PNG",
+        "size": "Размер",
+        "opacity": "Прозрачность",
+        "outline_width": "Толщина контура",
+        "hide": "Скрыть",
+        "refresh_list": "Обновить список",
+        "missing_crosshairs": "Поместите PNG-файлы в папку crosshairs.",
+        "crosshair": "Прицел",
+        "fill_plain_color": "Заливать сплошным цветом",
+        "red": "Красный",
+        "green": "Зелёный",
+        "blue": "Синий",
+        "outline": "Контур",
+        "rotation": "Поворот",
+        "aim": "Прицеливание",
+        "language": "Язык",
+        "about": "О программе",
+        "made_by": "Создал MaZe (a11y) (при помощи OpenAI Codex)",
+        "version": "Версия: 1.1",
+    },
+    "es": {
+        "window_title": "Configuración de SimpleCross",
+        "tab_shape": "Forma",
+        "tab_color": "Color",
+        "tab_offset": "Desplazamiento",
+        "tab_hotkeys": "Atajos",
+        "tab_language_about": "Idioma/Acerca de",
+        "png": "PNG",
+        "size": "Tamaño",
+        "opacity": "Opacidad",
+        "outline_width": "Grosor del contorno",
+        "hide": "Ocultar",
+        "refresh_list": "Actualizar lista",
+        "missing_crosshairs": "Coloca archivos PNG en la carpeta crosshairs.",
+        "crosshair": "Mira",
+        "fill_plain_color": "Rellenar con color sólido",
+        "red": "Rojo",
+        "green": "Verde",
+        "blue": "Azul",
+        "outline": "Contorno",
+        "rotation": "Rotación",
+        "aim": "Apuntar",
+        "language": "Idioma",
+        "about": "Acerca de",
+        "made_by": "Creado por MaZe (a11y) (con ayuda de OpenAI Codex)",
+        "version": "Versión: 1.1",
+    },
+    "de": {
+        "window_title": "SimpleCross-Einstellungen",
+        "tab_shape": "Form",
+        "tab_color": "Farbe",
+        "tab_offset": "Versatz",
+        "tab_hotkeys": "Hotkeys",
+        "tab_language_about": "Sprache/Info",
+        "png": "PNG",
+        "size": "Größe",
+        "opacity": "Deckkraft",
+        "outline_width": "Konturstärke",
+        "hide": "Ausblenden",
+        "refresh_list": "Liste aktualisieren",
+        "missing_crosshairs": "Lege PNG-Dateien im Ordner crosshairs ab.",
+        "crosshair": "Fadenkreuz",
+        "fill_plain_color": "Mit Vollfarbe füllen",
+        "red": "Rot",
+        "green": "Grün",
+        "blue": "Blau",
+        "outline": "Kontur",
+        "rotation": "Drehung",
+        "aim": "Zielen",
+        "language": "Sprache",
+        "about": "Info",
+        "made_by": "Erstellt von MaZe (a11y) (mit Unterstützung von OpenAI Codex)",
+        "version": "Version: 1.1",
+    },
+    "fr": {
+        "window_title": "Paramètres de SimpleCross",
+        "tab_shape": "Forme",
+        "tab_color": "Couleur",
+        "tab_offset": "Décalage",
+        "tab_hotkeys": "Raccourcis",
+        "tab_language_about": "Langue/À propos",
+        "png": "PNG",
+        "size": "Taille",
+        "opacity": "Opacité",
+        "outline_width": "Épaisseur du contour",
+        "hide": "Masquer",
+        "refresh_list": "Actualiser la liste",
+        "missing_crosshairs": "Placez des fichiers PNG dans le dossier crosshairs.",
+        "crosshair": "Réticule",
+        "fill_plain_color": "Remplir avec une couleur unie",
+        "red": "Rouge",
+        "green": "Vert",
+        "blue": "Bleu",
+        "outline": "Contour",
+        "rotation": "Rotation",
+        "aim": "Viser",
+        "language": "Langue",
+        "about": "À propos",
+        "made_by": "Créé par MaZe (a11y) (avec l'aide d'OpenAI Codex)",
+        "version": "Version : 1.1",
+    },
+    "pt-BR": {
+        "window_title": "Configurações do SimpleCross",
+        "tab_shape": "Forma",
+        "tab_color": "Cor",
+        "tab_offset": "Deslocamento",
+        "tab_hotkeys": "Atalhos",
+        "tab_language_about": "Idioma/Sobre",
+        "png": "PNG",
+        "size": "Tamanho",
+        "opacity": "Opacidade",
+        "outline_width": "Espessura do contorno",
+        "hide": "Ocultar",
+        "refresh_list": "Atualizar lista",
+        "missing_crosshairs": "Coloque arquivos PNG na pasta crosshairs.",
+        "crosshair": "Mira",
+        "fill_plain_color": "Preencher com cor sólida",
+        "red": "Vermelho",
+        "green": "Verde",
+        "blue": "Azul",
+        "outline": "Contorno",
+        "rotation": "Rotação",
+        "aim": "Mirar",
+        "language": "Idioma",
+        "about": "Sobre",
+        "made_by": "Criado por MaZe (a11y) (com ajuda do OpenAI Codex)",
+        "version": "Versão: 1.1",
+    },
+    "ja": {
+        "window_title": "SimpleCross 設定",
+        "tab_shape": "形状",
+        "tab_color": "色",
+        "tab_offset": "オフセット",
+        "tab_hotkeys": "ホットキー",
+        "tab_language_about": "言語/このアプリについて",
+        "png": "PNG",
+        "size": "サイズ",
+        "opacity": "不透明度",
+        "outline_width": "アウトラインの太さ",
+        "hide": "非表示",
+        "refresh_list": "一覧を更新",
+        "missing_crosshairs": "PNG ファイルを crosshairs フォルダーに入れてください。",
+        "crosshair": "クロスヘア",
+        "fill_plain_color": "単色で塗りつぶす",
+        "red": "赤",
+        "green": "緑",
+        "blue": "青",
+        "outline": "アウトライン",
+        "rotation": "回転",
+        "aim": "照準",
+        "language": "言語",
+        "about": "情報",
+        "made_by": "MaZe (a11y) が作成 (OpenAI Codex の支援あり)",
+        "version": "バージョン: 1.1",
+    },
+    "ko": {
+        "window_title": "SimpleCross 설정",
+        "tab_shape": "모양",
+        "tab_color": "색상",
+        "tab_offset": "오프셋",
+        "tab_hotkeys": "단축키",
+        "tab_language_about": "언어/프로그램 정보",
+        "png": "PNG",
+        "size": "크기",
+        "opacity": "불투명도",
+        "outline_width": "윤곽선 두께",
+        "hide": "숨기기",
+        "refresh_list": "목록 새로고침",
+        "missing_crosshairs": "PNG 파일을 crosshairs 폴더에 넣으세요.",
+        "crosshair": "조준선",
+        "fill_plain_color": "단색으로 채우기",
+        "red": "빨강",
+        "green": "초록",
+        "blue": "파랑",
+        "outline": "윤곽선",
+        "rotation": "회전",
+        "aim": "조준",
+        "language": "언어",
+        "about": "정보",
+        "made_by": "MaZe (a11y)가 제작 (OpenAI Codex의 도움을 받음)",
+        "version": "버전: 1.1",
+    },
+    "zh-CN": {
+        "window_title": "SimpleCross 设置",
+        "tab_shape": "形状",
+        "tab_color": "颜色",
+        "tab_offset": "偏移",
+        "tab_hotkeys": "快捷键",
+        "tab_language_about": "语言/关于",
+        "png": "PNG",
+        "size": "大小",
+        "opacity": "不透明度",
+        "outline_width": "描边宽度",
+        "hide": "隐藏",
+        "refresh_list": "刷新列表",
+        "missing_crosshairs": "请将 PNG 文件放入 crosshairs 文件夹。",
+        "crosshair": "准星",
+        "fill_plain_color": "填充纯色",
+        "red": "红色",
+        "green": "绿色",
+        "blue": "蓝色",
+        "outline": "描边",
+        "rotation": "旋转",
+        "aim": "瞄准",
+        "language": "语言",
+        "about": "关于",
+        "made_by": "由 MaZe (a11y) 制作 (在 OpenAI Codex 协助下)",
+        "version": "版本: 1.1",
+    },
+}
 GWL_EXSTYLE = -20
 WS_EX_LAYERED = 0x00080000
 WS_EX_TRANSPARENT = 0x00000020
@@ -119,6 +387,7 @@ class Settings:
         self.red = DEFAULT_RED
         self.green = DEFAULT_GREEN
         self.blue = DEFAULT_BLUE
+        self.fill_plain_color = DEFAULT_FILL_PLAIN_COLOR
         self.outline_red = DEFAULT_OUTLINE_RED
         self.outline_green = DEFAULT_OUTLINE_GREEN
         self.outline_blue = DEFAULT_OUTLINE_BLUE
@@ -126,6 +395,7 @@ class Settings:
         self.outline_thickness = DEFAULT_OUTLINE_THICKNESS
         self.aim_hotkey = DEFAULT_AIM_HOTKEY
         self.hide_hotkey = DEFAULT_HIDE_HOTKEY
+        self.language = DEFAULT_LANGUAGE
         self.crosshair = ""
         self._loaded = {}
 
@@ -186,6 +456,10 @@ class Settings:
             MAX_RGB,
             DEFAULT_BLUE,
         )
+        self.fill_plain_color = self._clamp_bool(
+            self._read_value(section, "fill_plain_color", DEFAULT_FILL_PLAIN_COLOR),
+            DEFAULT_FILL_PLAIN_COLOR,
+        )
         self.outline_red = self._clamp_int(
             self._read_value(section, "outline_red", DEFAULT_OUTLINE_RED),
             MIN_RGB,
@@ -222,6 +496,11 @@ class Settings:
         self.hide_hotkey = str(
             self._read_value(section, "hide_hotkey", DEFAULT_HIDE_HOTKEY)
         ).strip() or DEFAULT_HIDE_HOTKEY
+        self.language = str(
+            self._read_value(section, "language", DEFAULT_LANGUAGE)
+        ).strip()
+        if self.language not in LANGUAGES:
+            self.language = DEFAULT_LANGUAGE
         self.crosshair = str(self._read_value(section, "crosshair", "")).strip()
         self._loaded = self.as_dict()
 
@@ -241,6 +520,7 @@ class Settings:
             "red": str(current["red"]),
             "green": str(current["green"]),
             "blue": str(current["blue"]),
+            "fill_plain_color": str(current["fill_plain_color"]),
             "outline_red": str(current["outline_red"]),
             "outline_green": str(current["outline_green"]),
             "outline_blue": str(current["outline_blue"]),
@@ -248,6 +528,7 @@ class Settings:
             "outline_thickness": str(current["outline_thickness"]),
             "aim_hotkey": current["aim_hotkey"],
             "hide_hotkey": current["hide_hotkey"],
+            "language": current["language"],
             "crosshair": current["crosshair"],
         }
         with self.path.open("w", encoding="utf-8") as file:
@@ -265,6 +546,7 @@ class Settings:
             "red": int(self.red),
             "green": int(self.green),
             "blue": int(self.blue),
+            "fill_plain_color": bool(self.fill_plain_color),
             "outline_red": int(self.outline_red),
             "outline_green": int(self.outline_green),
             "outline_blue": int(self.outline_blue),
@@ -272,6 +554,7 @@ class Settings:
             "outline_thickness": int(self.outline_thickness),
             "aim_hotkey": self.aim_hotkey,
             "hide_hotkey": self.hide_hotkey,
+            "language": self.language,
             "crosshair": self.crosshair,
         }
 
@@ -351,7 +634,7 @@ class SimpleCrossApp:
         self.crosshair_photo = None
 
         self.settings_window = Toplevel(self.root)
-        self.settings_window.title("SimpleCross Settings")
+        self.settings_window.title(self._text("window_title"))
         self.settings_window.resizable(False, False)
         self.settings_window.protocol("WM_DELETE_WINDOW", self.close)
 
@@ -363,6 +646,7 @@ class SimpleCrossApp:
         self.red_var = StringVar(value=str(self.settings.red))
         self.green_var = StringVar(value=str(self.settings.green))
         self.blue_var = StringVar(value=str(self.settings.blue))
+        self.fill_plain_color_var = BooleanVar(value=self.settings.fill_plain_color)
         self.outline_red_var = StringVar(value=str(self.settings.outline_red))
         self.outline_green_var = StringVar(value=str(self.settings.outline_green))
         self.outline_blue_var = StringVar(value=str(self.settings.outline_blue))
@@ -376,6 +660,7 @@ class SimpleCrossApp:
         self.crosshair_var = StringVar(value=self.settings.crosshair)
         self.aim_hotkey_var = StringVar(value=self.settings.aim_hotkey)
         self.hide_hotkey_var = StringVar(value=self.settings.hide_hotkey)
+        self.language_var = StringVar(value=LANGUAGES[self.settings.language])
 
         self._build_settings_window()
         self._refresh_previews()
@@ -402,7 +687,23 @@ class SimpleCrossApp:
             if path.is_file() and path.suffix.lower() == ".png"
         )
 
+    def _text(self, key: str) -> str:
+        language = self.settings.language
+        return TEXT.get(language, TEXT[DEFAULT_LANGUAGE]).get(key, TEXT[DEFAULT_LANGUAGE][key])
+
+    def _rebuild_settings_window(self) -> None:
+        self._updating_controls = True
+        try:
+            for child in self.settings_window.winfo_children():
+                child.destroy()
+            self.language_var.set(LANGUAGES[self.settings.language])
+            self._build_settings_window()
+        finally:
+            self._updating_controls = False
+        self._refresh_previews()
+
     def _build_settings_window(self) -> None:
+        self.settings_window.title(self._text("window_title"))
         notebook = ttk.Notebook(self.settings_window)
         notebook.grid(row=0, column=0, sticky="nsew", padx=6, pady=6)
 
@@ -410,15 +711,18 @@ class SimpleCrossApp:
         color_tab = ttk.Frame(notebook, padding=8)
         offset_tab = ttk.Frame(notebook, padding=8)
         hotkeys_tab = ttk.Frame(notebook, padding=8)
-        notebook.add(shape_tab, text="Shape")
-        notebook.add(color_tab, text="Color")
-        notebook.add(offset_tab, text="Offset")
-        notebook.add(hotkeys_tab, text="Hotkeys")
+        language_about_tab = ttk.Frame(notebook, padding=8)
+        notebook.add(shape_tab, text=self._text("tab_shape"))
+        notebook.add(color_tab, text=self._text("tab_color"))
+        notebook.add(offset_tab, text=self._text("tab_offset"))
+        notebook.add(hotkeys_tab, text=self._text("tab_hotkeys"))
+        notebook.add(language_about_tab, text=self._text("tab_language_about"))
 
         self._build_shape_tab(shape_tab)
         self._build_color_tab(color_tab)
         self._build_offset_tab(offset_tab)
         self._build_hotkeys_tab(hotkeys_tab)
+        self._build_language_about_tab(language_about_tab)
 
     def _build_shape_tab(self, frame: ttk.Frame) -> None:
         self.shape_preview_box = Frame(
@@ -441,7 +745,7 @@ class SimpleCrossApp:
         )
         self.shape_preview.pack(fill="both", expand=True)
 
-        ttk.Label(frame, text="PNG").grid(row=0, column=1, sticky="w")
+        ttk.Label(frame, text=self._text("png")).grid(row=0, column=1, sticky="w")
         self.crosshair_combo = ttk.Combobox(
             frame,
             textvariable=self.crosshair_var,
@@ -455,7 +759,7 @@ class SimpleCrossApp:
         self.size_scale = self._add_scale_row(
             frame,
             row=1,
-            label="Size",
+            label=self._text("size"),
             variable=self.size_var,
             minimum=MIN_SIZE,
             maximum=MAX_SIZE,
@@ -466,7 +770,7 @@ class SimpleCrossApp:
         self.opacity_scale = self._add_scale_row(
             frame,
             row=2,
-            label="Opacity",
+            label=self._text("opacity"),
             variable=self.opacity_var,
             minimum=MIN_OPACITY * 100,
             maximum=MAX_OPACITY * 100,
@@ -477,7 +781,7 @@ class SimpleCrossApp:
         self.outline_thickness_scale = self._add_scale_row(
             frame,
             row=3,
-            label="Outline width",
+            label=self._text("outline_width"),
             variable=self.outline_thickness_var,
             minimum=MIN_OUTLINE_THICKNESS,
             maximum=MAX_OUTLINE_THICKNESS,
@@ -488,19 +792,21 @@ class SimpleCrossApp:
 
         ttk.Checkbutton(
             frame,
-            text="Hide",
+            text=self._text("hide"),
             variable=self.hidden_var,
             command=self._on_hidden_changed,
         ).grid(row=4, column=1, columnspan=3, sticky="w", pady=(8, 0))
 
-        ttk.Button(frame, text="Refresh list", command=self._refresh_crosshair_list).grid(
-            row=5, column=1, columnspan=3, sticky="w", pady=(8, 0)
-        )
+        ttk.Button(
+            frame,
+            text=self._text("refresh_list"),
+            command=self._refresh_crosshair_list,
+        ).grid(row=5, column=1, columnspan=3, sticky="w", pady=(8, 0))
 
         if not self.crosshairs:
             ttk.Label(
                 frame,
-                text="Put PNG files into the crosshairs folder.",
+                text=self._text("missing_crosshairs"),
                 foreground="red",
             ).grid(row=6, column=0, columnspan=4, sticky="w", pady=(12, 0))
 
@@ -513,14 +819,22 @@ class SimpleCrossApp:
             borderwidth=1,
             relief="solid",
         )
-        self.color_preview.grid(row=0, column=0, rowspan=9, sticky="n", padx=(0, 8))
+        self.color_preview.grid(row=0, column=0, rowspan=10, sticky="n", padx=(0, 8))
         self.color_preview.grid_propagate(False)
 
-        ttk.Label(frame, text="Crosshair").grid(row=0, column=1, columnspan=3, sticky="w")
+        ttk.Label(frame, text=self._text("crosshair")).grid(
+            row=0, column=1, columnspan=3, sticky="w"
+        )
+        ttk.Checkbutton(
+            frame,
+            text=self._text("fill_plain_color"),
+            variable=self.fill_plain_color_var,
+            command=self._on_fill_plain_color_changed,
+        ).grid(row=1, column=1, columnspan=3, sticky="w", pady=(6, 0))
         self.red_scale = self._add_scale_row(
             frame,
-            row=1,
-            label="Red",
+            row=2,
+            label=self._text("red"),
             variable=self.red_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -530,8 +844,8 @@ class SimpleCrossApp:
         )
         self.green_scale = self._add_scale_row(
             frame,
-            row=2,
-            label="Green",
+            row=3,
+            label=self._text("green"),
             variable=self.green_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -541,8 +855,8 @@ class SimpleCrossApp:
         )
         self.blue_scale = self._add_scale_row(
             frame,
-            row=3,
-            label="Blue",
+            row=4,
+            label=self._text("blue"),
             variable=self.blue_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -550,13 +864,13 @@ class SimpleCrossApp:
             command=lambda value: self._on_rgb_changed("blue", value),
             commit=lambda event=None: self._commit_rgb_entry("blue"),
         )
-        ttk.Label(frame, text="Outline").grid(
-            row=4, column=1, columnspan=3, sticky="w", pady=(10, 0)
+        ttk.Label(frame, text=self._text("outline")).grid(
+            row=5, column=1, columnspan=3, sticky="w", pady=(10, 0)
         )
         self.outline_red_scale = self._add_scale_row(
             frame,
-            row=5,
-            label="Red",
+            row=6,
+            label=self._text("red"),
             variable=self.outline_red_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -566,8 +880,8 @@ class SimpleCrossApp:
         )
         self.outline_green_scale = self._add_scale_row(
             frame,
-            row=6,
-            label="Green",
+            row=7,
+            label=self._text("green"),
             variable=self.outline_green_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -577,8 +891,8 @@ class SimpleCrossApp:
         )
         self.outline_blue_scale = self._add_scale_row(
             frame,
-            row=7,
-            label="Blue",
+            row=8,
+            label=self._text("blue"),
             variable=self.outline_blue_var,
             minimum=MIN_RGB,
             maximum=MAX_RGB,
@@ -613,7 +927,7 @@ class SimpleCrossApp:
         self.rotation_scale = self._add_scale_row(
             frame,
             row=2,
-            label="Rotation",
+            label=self._text("rotation"),
             variable=self.rotation_var,
             minimum=MIN_ROTATION,
             maximum=MAX_ROTATION,
@@ -623,17 +937,41 @@ class SimpleCrossApp:
         )
 
     def _build_hotkeys_tab(self, frame: ttk.Frame) -> None:
-        ttk.Label(frame, text="Aim").grid(row=0, column=0, sticky="w")
+        ttk.Label(frame, text=self._text("aim")).grid(row=0, column=0, sticky="w")
         aim_entry = ttk.Entry(frame, textvariable=self.aim_hotkey_var, width=14)
         aim_entry.grid(row=0, column=1, sticky="ew", padx=(8, 0))
         aim_entry.bind("<KeyPress>", lambda event: self._capture_hotkey(event, "aim"))
         aim_entry.bind("<ButtonPress>", lambda event: self._capture_mouse_hotkey(event, "aim"))
 
-        ttk.Label(frame, text="Hide").grid(row=1, column=0, sticky="w", pady=(8, 0))
+        ttk.Label(frame, text=self._text("hide")).grid(
+            row=1, column=0, sticky="w", pady=(8, 0)
+        )
         hide_entry = ttk.Entry(frame, textvariable=self.hide_hotkey_var, width=14)
         hide_entry.grid(row=1, column=1, sticky="ew", padx=(8, 0), pady=(8, 0))
         hide_entry.bind("<KeyPress>", lambda event: self._capture_hotkey(event, "hide"))
         hide_entry.bind("<ButtonPress>", lambda event: self._capture_mouse_hotkey(event, "hide"))
+
+    def _build_language_about_tab(self, frame: ttk.Frame) -> None:
+        ttk.Label(frame, text=self._text("language")).grid(row=0, column=0, sticky="w")
+        language_combo = ttk.Combobox(
+            frame,
+            textvariable=self.language_var,
+            values=list(LANGUAGES.values()),
+            state="readonly",
+            width=18,
+        )
+        language_combo.grid(row=0, column=1, sticky="ew", padx=(8, 0))
+        language_combo.bind("<<ComboboxSelected>>", self._on_language_changed)
+
+        ttk.Label(frame, text=self._text("about")).grid(
+            row=1, column=0, columnspan=2, sticky="w", pady=(14, 0)
+        )
+        ttk.Label(frame, text=self._text("made_by")).grid(
+            row=2, column=0, columnspan=2, sticky="w", pady=(6, 0)
+        )
+        ttk.Label(frame, text=self._text("version")).grid(
+            row=3, column=0, columnspan=2, sticky="w", pady=(4, 0)
+        )
 
     def _add_scale_row(
         self,
@@ -653,9 +991,9 @@ class SimpleCrossApp:
             from_=minimum,
             to=maximum,
             orient=HORIZONTAL,
-            command=command,
         )
         scale.set(value)
+        scale.configure(command=command)
         scale.grid(row=row, column=2, sticky="ew", padx=(8, 0), pady=(7, 0))
         entry = ttk.Entry(frame, textvariable=variable, width=5)
         entry.grid(row=row, column=3, sticky="e", padx=(6, 0), pady=(7, 0))
@@ -742,6 +1080,24 @@ class SimpleCrossApp:
         self._schedule_save()
         self._refresh_previews()
         self._refresh_crosshair()
+
+    def _on_fill_plain_color_changed(self) -> None:
+        self.settings.fill_plain_color = bool(self.fill_plain_color_var.get())
+        self.settings.save_if_changed()
+        self._refresh_crosshair()
+
+    def _on_language_changed(self, _event=None) -> None:
+        selected_name = self.language_var.get()
+        for code, name in LANGUAGES.items():
+            if name == selected_name:
+                self.settings.language = code
+                break
+        else:
+            self.settings.language = DEFAULT_LANGUAGE
+            self.language_var.set(LANGUAGES[DEFAULT_LANGUAGE])
+
+        self.settings.save_if_changed()
+        self._rebuild_settings_window()
 
     def _commit_size_entry(self, _event=None):
         size = Settings._clamp_int(self.size_var.get(), MIN_SIZE, MAX_SIZE, self.settings.size)
@@ -879,6 +1235,8 @@ class SimpleCrossApp:
         self._refresh_color_preview()
 
     def _refresh_shape_preview(self) -> None:
+        if not self._widget_exists(getattr(self, "shape_preview", None)):
+            return
         selected = self.settings.crosshair
         image_path = CROSSHAIRS_DIR / selected if selected else None
         if not image_path or not image_path.exists():
@@ -899,7 +1257,18 @@ class SimpleCrossApp:
         self.shape_preview.configure(image=self._shape_preview_photo)
 
     def _refresh_color_preview(self) -> None:
+        if not self._widget_exists(getattr(self, "color_preview", None)):
+            return
         self.color_preview.configure(bg=self._rgb_hex())
+
+    @staticmethod
+    def _widget_exists(widget) -> bool:
+        if widget is None:
+            return False
+        try:
+            return bool(widget.winfo_exists())
+        except TclError:
+            return False
 
     def _refresh_crosshair(self) -> None:
         selected = self.settings.crosshair
@@ -1013,6 +1382,8 @@ class SimpleCrossApp:
 
     def _render_crosshair_layers(self, image: Image.Image) -> Image.Image:
         crosshair = self._colorize_image(image, self._rgb_tuple())
+        if not self.settings.fill_plain_color:
+            crosshair = self._normalize_source_image(image)
         if not self._outline_enabled():
             return crosshair
 
@@ -1073,6 +1444,14 @@ class SimpleCrossApp:
         colored.putalpha(mask)
         return colored
 
+    @staticmethod
+    def _normalize_source_image(image: Image.Image) -> Image.Image:
+        alpha = image.getchannel("A")
+        mask = alpha.point(lambda value: 255 if value > ALPHA_KEY_THRESHOLD else 0)
+        source = image.copy()
+        source.putalpha(mask)
+        return source
+
     def _prepare_for_color_key(self, image: Image.Image) -> Image.Image:
         mask = image.getchannel("A").point(
             lambda alpha: 255 if alpha > ALPHA_KEY_THRESHOLD else 0
@@ -1107,12 +1486,35 @@ class SimpleCrossApp:
 
     def _transparent_rgb(self) -> tuple[int, int, int]:
         visible_colors = {self._rgb_tuple()}
+        if not self.settings.fill_plain_color:
+            visible_colors.update(self._source_visible_colors())
         if self._outline_enabled():
             visible_colors.add(self._outline_rgb_tuple())
         for candidate in TRANSPARENT_COLOR_CANDIDATES:
             if candidate not in visible_colors:
                 return candidate
+        for red in range(1, 256, 37):
+            for green in range(2, 256, 37):
+                for blue in range(3, 256, 37):
+                    candidate = (red, green, blue)
+                    if candidate not in visible_colors:
+                        return candidate
         return (1, 2, 3)
+
+    def _source_visible_colors(self) -> set[tuple[int, int, int]]:
+        selected = self.settings.crosshair
+        image_path = CROSSHAIRS_DIR / selected if selected else None
+        if not image_path or not image_path.exists():
+            return set()
+
+        image = self._load_shape_image(image_path)
+        colors = set()
+        for _count, (red, green, blue, alpha) in image.getcolors(
+            maxcolors=image.width * image.height
+        ) or []:
+            if alpha > ALPHA_KEY_THRESHOLD:
+                colors.add((red, green, blue))
+        return colors
 
     def _transparent_tk_color(self) -> str:
         return "#{:02x}{:02x}{:02x}".format(*self._transparent_rgb())
